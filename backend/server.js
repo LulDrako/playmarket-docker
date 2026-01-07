@@ -1,6 +1,8 @@
-// Charger le .env depuis la racine du projet
 const path = require("path");
-require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
+
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
+}
 
 const express = require("express");
 const https = require("https");

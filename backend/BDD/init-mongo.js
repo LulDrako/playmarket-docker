@@ -1,15 +1,4 @@
-const mongoose = require('mongoose');
-require('dotenv').config();
-
-const gameDetailsSchema = new mongoose.Schema({
-  gameId: { type: Number, required: true, unique: true },
-  description: { type: String, required: true },
-  tags: [{ type: String }],
-  videos: [{ title: String, url: String }],
-  updatedAt: { type: Date, default: Date.now },
-}, { collection: "gameDetails" });
-
-const GameDetails = mongoose.model("GameDetails", gameDetailsSchema);
+db = db.getSiblingDB('playmarket');
 
 const gameDetailsData = [
   {
@@ -84,23 +73,7 @@ const gameDetailsData = [
   }
 ];
 
-async function seedGameDetails() {
-  try {
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/playmarket');
-    console.log('✅ Connected to MongoDB');
+db.gameDetails.deleteMany({});
+db.gameDetails.insertMany(gameDetailsData);
 
-    await GameDetails.deleteMany({});
-    console.log('🗑️  Anciennes données supprimées');
-
-    await GameDetails.insertMany(gameDetailsData);
-    console.log('✅ Game details ajoutés avec succès !');
-
-    mongoose.connection.close();
-  } catch (error) {
-    console.error('❌ Erreur:', error);
-    process.exit(1);
-  }
-}
-
-seedGameDetails();
-
+print('✅ Game details initialisés dans MongoDB');

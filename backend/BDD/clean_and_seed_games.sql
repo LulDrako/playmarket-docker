@@ -1,4 +1,4 @@
-okDELETE FROM order_items;
+DELETE FROM order_items;
 DELETE FROM orders;
 DELETE FROM games;
 

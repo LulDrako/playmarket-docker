@@ -1,123 +1,138 @@
-# PlayMarket – Déploiement Docker
-
-## Objectif
-Déployer une application web composée d’une API, de bases de données et d’un front-end
-via Docker et Docker Compose, sur toute machine disposant de Docker.
-
----
+# PLAYMARKET - Déploiement Docker
 
 ## Prérequis
-- Docker (>= 24)
-- Docker Compose
-- Linux / macOS / Windows (Docker Desktop)
+
+- Docker version 24.0 ou supérieure
+- Docker Compose version 2.0 ou supérieure
+- Linux, macOS ou Windows (avec Docker Desktop)
 
 Vérification :
-docker -v
-docker compose version
-
----
-
-## Lancement du projet
-
-### 1. Configuration
 ```bash
-cp .env.example .env
-# Éditer .env et modifier les valeurs (mots de passe, secrets JWT, etc.)
+docker --version
+docker compose version
 ```
 
+## Procédure de build et de lancement
+
+### 1. Configuration
+
+```bash
+cp .env.example .env
+```
+
+Éditer `.env` et configurer les variables (mots de passe, secrets JWT).
+
 ### 2. Build et démarrage
+
 ```bash
 docker compose up --build
 ```
 
-### 3. Arrêt des services
+### 3. Arrêt
+
 ```bash
 docker compose down
-# Pour supprimer aussi les volumes : docker compose down -v
 ```
+
+## Description des services
+
+### Frontend
+- **Technologie** : React (Vite) servi par Nginx
+- **Port** : 8080
+- **Accès** : http://localhost:8080
+
+### Backend
+- **Technologie** : Node.js / Express
+- **Port** : 3000
+- **Accès** : http://localhost:3000
+- **Endpoints** : `/api/auth`, `/api/games`, `/api/users`, `/api/orders`, `/api/mongo`
+
+### PostgreSQL
+- **Image** : postgres:16-alpine
+- **Port interne** : 5432
+- **Volume** : `postgres_data` (persistance)
+
+### MongoDB
+- **Image** : mongo:7
+- **Port interne** : 27017
+- **Volume** : `mongo_data` (persistance)
 
 ## Variables d'environnement
 
-Principales variables à configurer dans `.env` :
+| Variable | Description |
+|----------|-------------|
+| `NODE_ENV` | Environnement (development/production) |
+| `PORT` | Port backend (défaut: 3000) |
+| `FRONTEND_PORT` | Port frontend (défaut: 8080) |
+| `PG_HOST` | Hôte PostgreSQL (défaut: postgres) |
+| `PG_PORT` | Port PostgreSQL (défaut: 5432) |
+| `PG_DATABASE` | Nom base PostgreSQL |
+| `PG_USER` | Utilisateur PostgreSQL |
+| `PG_PASSWORD` | Mot de passe PostgreSQL |
+| `MONGODB_URI` | URI MongoDB (ex: mongodb://mongo:27017/playmarket) |
+| `JWT_SECRET` | Secret JWT (minimum 32 caractères) |
+| `JWT_REFRESH_SECRET` | Secret refresh token (minimum 32 caractères) |
+| `ALLOWED_ORIGINS` | Origines CORS (défaut: http://localhost:8080) |
 
-- `PG_DATABASE`, `PG_USER`, `PG_PASSWORD` : Configuration PostgreSQL
-- `MONGODB_URI` : URI de connexion MongoDB
-- `JWT_SECRET`, `JWT_REFRESH_SECRET` : Secrets pour les tokens JWT (minimum 32 caractères)
-- `ALLOWED_ORIGINS` : Origines autorisées pour CORS
+## Schéma d'architecture
 
----
+```mermaid
+flowchart LR
+    U[User] -->|8080| F[Frontend - Nginx]
+    F -->|API calls| B[Backend - Node API]
+    B --> P[PostgreSQL]
+    B --> M[MongoDB]
 
-## Accès aux services
+    P --- V1[(Postgres Volume)]
+    M --- V2[(Mongo Volume)]
 
-Frontend : http://localhost:8080  
-Backend API : http://localhost:3000  
-
----
-
-## Architecture
-
-### Services
-
-- **Frontend** : React (Vite) → Nginx (port 8080)
-- **Backend** : API Node.js/Express (port 3000)
-- **PostgreSQL** : Base de données relationnelle (port 5432)
-- **MongoDB** : Base de données NoSQL (port 27017)
-
-### Schéma d'architecture
-
+    subgraph app_net [Docker Network]
+        F
+        B
+        P
+        M
+    end
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Docker Network                       │
-│              (playmarket-network)                       │
-│                                                         │
-│  ┌──────────────┐         ┌──────────────┐            │
-│  │   Frontend   │────────▶│   Backend    │            │
-│  │  (Nginx)     │  /api   │  (Node.js)   │            │
-│  │  :8080       │         │  :3000       │            │
-│  └──────────────┘         └──────┬───────┘            │
-│                                  │                     │
-│                    ┌─────────────┴─────────────┐      │
-│                    │                           │      │
-│            ┌───────▼──────┐          ┌────────▼────┐ │
-│            │  PostgreSQL  │          │   MongoDB   │ │
-│            │   :5432      │          │   :27017    │ │
-│            └──────────────┘          └─────────────┘ │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
 
 Volumes:
-├── postgres_data (persistance PostgreSQL)
-└── mongo_data (persistance MongoDB)
+- postgres_data → persistance PostgreSQL
+- mongo_data → persistance MongoDB
 
-Flux principaux:
-1. Client → Frontend (Nginx) :80
-2. Frontend → Backend : /api → backend:3000
-3. Backend → PostgreSQL : connexion directe
-4. Backend → MongoDB : connexion directe
-```
+Flux:
+1. Client → Frontend (http://localhost:8080)
+2. Frontend → Backend (proxy /api → backend:3000)
+3. Backend → PostgreSQL (réseau Docker)
+4. Backend → MongoDB (réseau Docker)
 
-### Fonctionnement
+## Explication des choix techniques
 
-- **Réseau Docker** : `playmarket-network` (user-defined bridge)
-- **Volumes** : Persistance des données PostgreSQL et MongoDB
-- **Communication** : Frontend proxy `/api` vers backend
-- **Healthchecks** : PostgreSQL et MongoDB vérifiés avant démarrage backend
+### Multi-stage builds
+Réduction de la taille des images finales en séparant la phase de build de la phase de production.
 
----
+### Images Alpine
+Images légères et sécurisées pour réduire la surface d'attaque.
+
+### Utilisateur non-root
+Le backend s'exécute avec un utilisateur non-privilégié (UID 1001) pour renforcer la sécurité.
+
+### Réseau user-defined bridge
+Réseau isolé (`playmarket-network`) permettant la communication sécurisée entre conteneurs via DNS interne.
+
+### Volumes nommés
+Persistance des données des bases de données via volumes Docker nommés.
+
+### Healthchecks
+Vérifications de santé sur PostgreSQL et MongoDB pour garantir un démarrage ordonné des services.
+
+### Initialisation automatique des bases de données
+Les scripts d'initialisation sont montés dans les conteneurs de bases de données :
+- **PostgreSQL** : Les fichiers `.sql` dans `/docker-entrypoint-initdb.d/` sont exécutés automatiquement au premier démarrage
+- **MongoDB** : Les fichiers `.js` dans `/docker-entrypoint-initdb.d/` sont exécutés automatiquement au premier démarrage
 
 ## Sécurité et bonnes pratiques
 
-- ✅ Variables sensibles dans `.env` (non commité via `.gitignore`)
-- ✅ Images Docker officielles (Alpine pour réduire la taille)
-- ✅ Backend exécuté avec utilisateur non-root (`nodejs`)
-- ✅ Builds multi-stage pour optimiser les images
-- ✅ Healthchecks sur les bases de données
-- ✅ Réseau Docker isolé (user-defined bridge)
-- ✅ Volumes nommés pour la persistance des données
-
-## Choix techniques
-
-- **Multi-stage builds** : Réduction de la taille des images finales
-- **Nginx pour le frontend** : Serveur web performant et léger
-- **Alpine Linux** : Images minimales pour sécurité et performance
-- **Healthchecks** : Démarrage ordonné des services (BDD → Backend → Frontend)
+- Variables sensibles dans `.env` (non versionné via `.gitignore`)
+- Backend exécuté avec utilisateur non-root
+- Images officielles Alpine
+- Aucun mot de passe en clair dans le dépôt
+- Réseau Docker isolé
