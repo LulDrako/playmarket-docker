@@ -1,80 +1,60 @@
-# 🎮 PLAYMARKET
+# PlayMarket – Déploiement Docker
 
-Marketplace de jeux vidéo - API REST + Interface Web
-
----
-
-## 📁 Structure du projet
-
-```
-PLAYMARKET/
-├── backend/    → API REST (Node.js, Express, PostgreSQL, MongoDB)
-└── front/      → Interface utilisateur (React, Vite)
-```
+## Objectif
+Déployer une application web composée d’une API, de bases de données et d’un front-end
+via Docker et Docker Compose, sur toute machine disposant de Docker.
 
 ---
 
-## 🚀 Installation
+## Prérequis
+- Docker (>= 24)
+- Docker Compose
+- Linux / macOS / Windows (Docker Desktop)
 
-### Backend
-
-```bash
-cd backend
-npm install
-```
-
-Voir `backend/README.md` pour la configuration complète.
-
-### Frontend
-
-```bash
-cd front
-npm install
-```
+Vérification :
+docker -v
+docker compose version
 
 ---
 
-## 🎯 Lancement
+## Lancement du projet
 
-### Backend (API)
+### 1. Configuration
+cp .env.example .env
 
-```bash
-cd backend
-npm run dev
-```
-
-API disponible sur : `http://localhost:3000`
-
-### Frontend
-
-```bash
-cd front
-npm run dev
-```
-
-Interface disponible sur : `http://localhost:5173`
+### 2. Build et démarrage
+docker compose up --build
 
 ---
 
-## 🛠️ Technologies
+## Accès aux services
 
-**Backend :**
-- Express.js + MVC + POO
-- PostgreSQL + MongoDB
-- JWT Authentication
-- Swagger Documentation
-
-**Frontend :**
-- React
-- Vite
-- Tailwind CSS
+Frontend : http://localhost:8080  
+Backend API : http://localhost:3000  
 
 ---
 
-## 👥 Auteurs
+## Architecture
 
-Karim Feki - Ismael Genet
+Services :
+- Frontend : React
+- Backend : API Node.js
+- PostgreSQL : base de données relationnelle
+- MongoDB : base de données NoSQL
+
+Fonctionnement :
+- Réseau Docker dédié
+- Volumes Docker pour la persistance des données
+- Communication frontend → backend via /api
 
 ---
 
-TP Bachelor EFREI
+## Sécurité et bonnes pratiques
+- Variables sensibles dans .env (non commité)
+- Images Docker officielles
+- Backend exécuté avec un utilisateur non-root
+
+---
+
+## Arrêt des services
+docker compose down
