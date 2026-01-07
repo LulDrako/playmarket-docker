@@ -1,0 +1,30 @@
+# Node modules
+backend/node_modules/
+front/node_modules/
+node_modules/
+
+# Environment
+backend/.env
+front/.env*
+.env
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Build
+front/dist/
+backend/dist/
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# Docker
+**/.dockerignore

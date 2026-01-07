@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gaming-darker text-white antialiased;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-gaming-purple via-gaming-pink to-gaming-blue;
+  }
+  
+  .card-gaming {
+    @apply bg-gaming-dark/50 backdrop-blur-sm border border-gaming-purple/20 rounded-xl p-6 hover:border-gaming-purple/40 transition-all duration-300;
+  }
+
+  .btn-gaming {
+    @apply bg-gradient-to-r from-gaming-purple to-gaming-pink text-white font-semibold px-6 py-3 rounded-lg hover:scale-105 transition-transform duration-200 shadow-lg hover:shadow-gaming-purple/50;
+  }
+}
