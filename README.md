@@ -20,13 +20,33 @@ docker compose version
 cp .env.example .env
 ```
 
-Éditer `.env` et configurer les variables (mots de passe, secrets JWT).
+Éditer `.env` et configurer les variables :
+
+**Génération des secrets JWT :**
+```bash
+# Générer JWT_SECRET et JWT_REFRESH_SECRET (32 caractères minimum)
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+**Variables importantes :**
+- `PG_PASSWORD` : Mot de passe PostgreSQL (à définir)
+- `JWT_SECRET` : Secret JWT (générer avec la commande ci-dessus)
+- `JWT_REFRESH_SECRET` : Secret refresh token (générer avec la commande ci-dessus)
+- `ALLOWED_ORIGINS` : Origines autorisées pour CORS
 
 ### 2. Build et démarrage
 
+**Premier lancement (build nécessaire) :**
 ```bash
 docker compose up --build
 ```
+
+**Lancements suivants (sans rebuild) :**
+```bash
+docker compose up
+```
+
+**Note :** Utilisez `--build` uniquement si vous modifiez les Dockerfiles ou le code. Sinon, `docker compose up` suffit.
 
 ### 3. Arrêt
 
@@ -70,9 +90,9 @@ docker compose down
 | `PG_USER` | Utilisateur PostgreSQL |
 | `PG_PASSWORD` | Mot de passe PostgreSQL |
 | `MONGODB_URI` | URI MongoDB (ex: mongodb://mongo:27017/playmarket) |
-| `JWT_SECRET` | Secret JWT (minimum 32 caractères) |
-| `JWT_REFRESH_SECRET` | Secret refresh token (minimum 32 caractères) |
-| `ALLOWED_ORIGINS` | Origines CORS (défaut: http://localhost:8080) |
+| `JWT_SECRET` | Secret JWT |
+| `JWT_REFRESH_SECRET` | Secret refresh token |
+| `ALLOWED_ORIGINS` | Origines CORS autorisées |
 
 ## Schéma d'architecture
 
