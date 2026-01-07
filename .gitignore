@@ -28,3 +28,30 @@ temp/
 
 # Docker
 **/.dockerignore
+
+# SSL / Certificates / Private Keys
+*.pem
+*.key
+*.crt
+*.cert
+*.p12
+*.pfx
+*.jks
+*id_rsa*
+*id_ed25519*
+*id_ecdsa*
+*_rsa
+*_dsa
+*_ed25519
+*_ecdsa
+backend/ssl/
+ssl/
+certs/
+keys/
+*.csr
+*.p7b
+*.p7c
+*.p7m
+*.p7s
+*.cer
+*.der
