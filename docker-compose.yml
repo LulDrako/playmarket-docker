@@ -1,5 +1,93 @@
 name: playmarket
 
-# Docker Compose configuration
-# Aucun service configuré pour le moment
+services:
+  # Base de données PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: playmarket-postgres
+    environment:
+      POSTGRES_DB: ${PG_DATABASE}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - playmarket-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
+  # Base de données MongoDB
+  mongo:
+    image: mongo:7-alpine
+    container_name: playmarket-mongo
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-playmarket}
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - playmarket-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: playmarket-backend
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-3000}
+      PG_HOST: postgres
+      PG_PORT: ${PG_PORT:-5432}
+      PG_DATABASE: ${PG_DATABASE}
+      PG_USER: ${PG_USER}
+      PG_PASSWORD: ${PG_PASSWORD}
+      MONGODB_URI: ${MONGODB_URI}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080}
+    ports:
+      - "${PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    networks:
+      - playmarket-network
+    restart: unless-stopped
+
+  # Frontend React
+  frontend:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    container_name: playmarket-frontend
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - backend
+    networks:
+      - playmarket-network
+    restart: unless-stopped
+
+# Réseau user-defined bridge
+networks:
+  playmarket-network:
+    driver: bridge
+
+# Volumes pour la persistance des données
+volumes:
+  postgres_data:
+    driver: local
+  mongo_data:
+    driver: local
